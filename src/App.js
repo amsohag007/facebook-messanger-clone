@@ -2,14 +2,20 @@ import React,{useState,useEffect} from 'react';
 import {InputLabel, Input, Button, FormControl} from '@material-ui/core';
 import Message from './Message';
 import './App.css'
+import db from './firebase';
+import firebase from 'firebase';
 
 function App() {
   const [input,setInput]=useState('');
-  const [messages,setMessages]=useState([
-    {username:"sunny", text:"hey guys"},
-    {username:"sajeeb", text:"hello guys"}
-  ]);
+  const [messages,setMessages]=useState([]);
   const [username,setUsername]=useState(''); 
+
+  useEffect(() => {
+    db.collection('messages').orderBy('timestamp','asc').onSnapshot(snapshot=>{
+      setMessages(snapshot.docs.map(doc=>doc.data()))//return message obect from firebase messages collecton
+      console.log(snapshot.docs.map(doc=>doc.data()));
+    });
+  },)
 
   useEffect(() => {
     setUsername(prompt('please enter your user name'));
@@ -17,7 +23,14 @@ function App() {
 
   const sendMessage=(e)=>{
     e.preventDefault();
-    setMessages([...messages, {username:username, text:input}]);
+
+    db.collection('messages').add({
+      message:input,
+      username:username,
+      timestamp:firebase.firestore.FieldValue.serverTimestamp()
+    })
+
+    //setMessages([...messages, {username:username, message:input}]);//for local state test
     setInput('');
   }
 
@@ -32,7 +45,7 @@ function App() {
      </FormControl>
      {
        messages.map(message=>(
-         <Message username={message.username} text={message.text}/>
+         <Message username={username} message={message}/>
        ))
      }
     </div>
